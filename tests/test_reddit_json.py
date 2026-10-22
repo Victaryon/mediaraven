@@ -275,6 +275,15 @@ def test_post_data_from_html_gallery_e_video():
     assert d['is_video'] and d['_hls_url'] == 'https://v.redd.it/abc/HLSPlaylist.m3u8?f=sd&a=1'
     assert '_media_urls' not in d
 
+    sem_tipo = '<shreddit-post post-title="S" content-href="https://i.redd.it/so.jpeg" domain="i.redd.it"></shreddit-post>'
+    assert reddit_json._post_data_from_html(sem_tipo)['_media_urls'] == ['https://i.redd.it/so.jpeg']
+
+    crosspost = video.replace('post-type="video"', 'post-type="crosspost"').replace(
+        'content-href="https://v.redd.it/abc"', 'content-href="/r/orig/comments/q/t/"')
+    d = reddit_json._post_data_from_html(crosspost)
+    assert d['is_video'] and d['url'] == 'https://www.reddit.com/r/orig/comments/q/t/'
+    assert reddit_json.reddit_external_link(d) is None
+
 
 def test_fetch_reddit_page_resolve_desafio_js():
     desafio = (
@@ -306,7 +315,8 @@ def test_fetch_reddit_page_resolve_desafio_js():
             return _Resp(desafio if params is None else "<shreddit-post></shreddit-post>")
 
     with patch.object(reddit_json.curl_requests, 'Session', _Session):
-        page = reddit_json._fetch_reddit_page_sync("https://www.reddit.com/r/x/comments/z/t/")
+        page = reddit_json._fetch_reddit_page_sync("https://www.reddit.com/r/x/comments/z/t%25C3%25A9/")
     assert page == "<shreddit-post></shreddit-post>"
+    assert calls[0][0] == "https://www.reddit.com/r/x/comments/z/t%C3%A9/"
     assert calls[1] == ("https://www.reddit.com/r/x/comments/z/t/",
                         {'solution': 'ab12ab12', 'js_challenge': '1', 'jsc_token': 'tok'})

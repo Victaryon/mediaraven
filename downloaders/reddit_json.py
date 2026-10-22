@@ -3,7 +3,7 @@ import html
 import logging
 import os
 import re
-from urllib.parse import urljoin
+from urllib.parse import unquote, urljoin
 
 import aiohttp
 from curl_cffi import requests as curl_requests
@@ -95,6 +95,10 @@ async def _fetch_reddit_post_data(url: str) -> dict:
 
 def _fetch_reddit_page_sync(url: str) -> str:
     # aiohttp leva 403 mesmo resolvendo o desafio; precisa da digital TLS de navegador.
+    # O link /s/ do app redireciona com o slug codificado duas vezes (hist%25C3%25B3ria),
+    # e a página não acha o post; a API JSON ia pelo ID e não ligava.
+    if '%25' in url:
+        url = unquote(url)
     with curl_requests.Session(impersonate="firefox", timeout=15) as s:
         r = s.get(url)
         seed = _JSC_SEED_RE.search(r.text)
@@ -122,20 +126,25 @@ def _post_data_from_html(page: str) -> dict:
     attrs = {k: html.unescape(v) for k, v in _ATTR_RE.findall(m.group(1))}
     body = m.group(2)
     post_type = attrs.get('post-type', '')
+    player = _PLAYER_RE.search(body)
     data = {
         'title': attrs.get('post-title', ''),
         'selftext': '',
-        'url': attrs.get('content-href', ''),
+        # crosspost traz o permalink do original, relativo
+        'url': urljoin('https://www.reddit.com/', attrs.get('content-href', '')),
         'domain': attrs.get('domain', ''),
         'is_self': post_type == 'text',
-        'is_video': post_type == 'video',
+        'is_video': post_type == 'video' or (post_type == 'crosspost' and bool(player)),
     }
-    player = _PLAYER_RE.search(body)
     if player:
         data['_hls_url'] = html.unescape(player.group(1))
-    if post_type in ('image', 'gallery'):
+    if not player:
+        # Alguns posts vêm sem post-type nem <img> no corpo; aí só sobra o content-href.
         urls = [u for u in _IREDDIT_RE.findall(body) if is_reddit_media_url(u)]
-        data['_media_urls'] = list(dict.fromkeys(urls)) or [data['url']]
+        if not urls and looks_like_image(data['url']):
+            urls = [data['url']]
+        if urls and post_type not in ('text', 'link'):
+            data['_media_urls'] = list(dict.fromkeys(urls))
     return data
 
 
