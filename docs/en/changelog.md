@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.3.3 — Reddit downloads again without the JSON API
+
+**Root cause:** on 2026-10-21 Reddit started answering `403 Blocked` on the JSON API to any anonymous client (residential or datacenter IP, with or without cookies), and yt-dlp — including that day's build — fails with *"Account authentication is required"*. Every Reddit link failed with "🔑 Video requires login".
+
+- 👽 **Post page instead of the API:** on a JSON 403, `reddit_json` opens the page through `curl_cffi` (Firefox TLS fingerprint), solves Reddit's JS challenge (doubles the seed and resubmits the form) and reads `<shreddit-post>`: images and galleries come from the post's `i.redd.it` URLs; videos go to yt-dlp via the `<shreddit-player>` HLS URL, with the post title as caption.
+- 🔁 **Crosspost:** the `content-href` relative to the original becomes an absolute URL and the video on the page itself is used — it used to become a broken "external link".
+- 🔤 **Accented titles:** the app's `/s/` link arrives with the slug encoded twice (`%25C3%25…`) and the page couldn't find the post; it is now decoded first.
+- 🖼️ **Post without `post-type`:** uses `content-href` when it is an image.
+- 🗑️ **Deleted media:** an image returning 404 on `i.redd.it` answers *"This post's media was removed from Reddit."* (new key `downloader_status.reddit_media_removed`) instead of "Video requires login", without spending 4 yt-dlp attempts.
+- ✅ 428 tests (new: JS challenge, page with gallery/video/crosspost/no type, double-encoded slug, deleted media).
+
 ## v1.3.2 — Post titles always whole
 
 **Root cause:** in the caption attached to the media, the title was cut with `...` — at **80 characters** on Reddit (with no author, the title moves to the header and inherited the author-name limit) and at 120 elsewhere. Reddit titles go up to 300.

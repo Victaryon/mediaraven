@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.3.3 — Reddit volta a baixar sem a API JSON
+
+**Causa:** em 21/10/2026 o Reddit passou a responder `403 Blocked` na API JSON pra qualquer anônimo (IP residencial ou de datacenter, com ou sem cookies), e o yt-dlp — inclusive a versão do mesmo dia — cai em *"Account authentication is required"*. Todo link do Reddit falhava com "🔑 Vídeo exige login".
+
+- 👽 **Página do post no lugar da API:** com 403 no JSON, o `reddit_json` abre a página via `curl_cffi` (digital TLS de Firefox), resolve o desafio JS do Reddit (dobra a semente e reenvia o form) e lê o `<shreddit-post>`: imagens e galerias saem das URLs `i.redd.it` do post; vídeos vão pro yt-dlp pela URL HLS do `<shreddit-player>`, com o título do post na legenda.
+- 🔁 **Crosspost:** `content-href` relativo ao original vira URL absoluta e o vídeo da própria página é usado — antes virava "link externo" quebrado.
+- 🔤 **Títulos com acento:** o link `/s/` do app chega com o slug codificado duas vezes (`%25C3%25…`) e a página não achava o post; agora é decodificado antes.
+- 🖼️ **Post sem `post-type`:** usa o `content-href` quando é imagem.
+- 🗑️ **Mídia apagada:** imagem com 404 no `i.redd.it` responde *"A mídia desse post foi removida do Reddit."* (nova chave `downloader_status.reddit_media_removed`) em vez de "Vídeo exige login", sem gastar 4 tentativas do yt-dlp.
+- ✅ 428 testes (novos: desafio JS, página com galeria/vídeo/crosspost/sem tipo, slug duplo, mídia removida).
+
 ## v1.3.2 — Título das postagens sempre inteiro
 
 **Causa:** na legenda que vai junto da mídia, o título era cortado com `...` — em **80 caracteres** no Reddit (sem autor, o título sobe pro cabeçalho e herdava o limite do nome do autor) e em 120 nos demais. Título do Reddit chega a 300.

@@ -94,7 +94,7 @@ Pré-v1.2.5 o bot mandava `webm`/`mkv`/`avi`/`flv` como vídeo, mas Telegram só
 
 ### Reddit: 403 Forbidden
 
-Reddit fechou acesso anônimo a muita coisa em 2023+. Cookies do Firefox resolvem se sua conta no Firefox tá logada no Reddit.
+Desde 21/10/2026 a API JSON do Reddit dá 403 pra qualquer anônimo, e o bot lê a página do post no lugar (veja [Reddit](platforms/reddit.md#pagina-do-post-quando-a-api-json-da-403)). Se ainda assim falhar, o desafio JS da página pode ter mudado de formato — abra uma issue com o log `LOG_LEVEL=DEBUG`.
 
 ### Threads: "Post X não encontrado em scripts JSON do HTML"
 
