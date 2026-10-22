@@ -31,6 +31,9 @@ _POST_RE = re.compile(r'<shreddit-post\b([^>]*)>(.*?)</shreddit-post>', re.S)
 _ATTR_RE = re.compile(r'([\w-]+)="([^"]*)"')
 _PLAYER_RE = re.compile(r'<shreddit-player\b[^>]*\bsrc="([^"]+)"')
 _IREDDIT_RE = re.compile(r'https://i\.redd\.it/[^"?&\s]+')
+_TEXT_BODY_RE = re.compile(r'-post-rtjson-content"[^>]*>(.*?)</div>', re.S)
+_BLOCK_END_RE = re.compile(r'</(?:p|li|h\d|blockquote|pre)>|<br\s*/?>')
+_TAG_RE = re.compile(r'<[^>]+>')
 
 
 def _reddit_json_headers() -> dict:
@@ -116,6 +119,15 @@ async def _fetch_reddit_page(url: str) -> str:
     return await loop.run_in_executor(state.IO_POOL, _fetch_reddit_page_sync, url)
 
 
+def _text_body(body: str) -> str:
+    """Texto do post (corpo em HTML) com um parágrafo por linha em branco."""
+    m = _TEXT_BODY_RE.search(body)
+    if not m:
+        return ''
+    text = html.unescape(_TAG_RE.sub('', _BLOCK_END_RE.sub('\n', m.group(1))))
+    return '\n\n'.join(ln.strip() for ln in text.splitlines() if ln.strip())
+
+
 def _post_data_from_html(page: str) -> dict:
     """Monta, a partir do <shreddit-post>, um dict com os campos do JSON que o
     resto do fluxo usa. `_media_urls` traz as imagens (i.redd.it) na ordem e
@@ -129,7 +141,7 @@ def _post_data_from_html(page: str) -> dict:
     player = _PLAYER_RE.search(body)
     data = {
         'title': attrs.get('post-title', ''),
-        'selftext': '',
+        'selftext': _text_body(body),
         # crosspost traz o permalink do original, relativo
         'url': urljoin('https://www.reddit.com/', attrs.get('content-href', '')),
         'domain': attrs.get('domain', ''),
@@ -252,6 +264,9 @@ async def download_reddit_json(
     if downloaded_files:
         caption_short, caption_full = build_reddit_caption(title, selftext, url)
         return downloaded_files, msg("downloader_status.reddit_json"), caption_short, caption_full
+    if (post_data or {}).get('is_self') and (title or selftext):
+        caption_short, caption_full = build_reddit_caption(title, selftext, url)
+        return [], msg("downloader_status.reddit_text_only"), caption_short, caption_full
     # só posts lidos da página (`_media_urls`); a API JSON já não responde
     if (post_data or {}).get('_media_urls') and media_urls and await _is_gone(media_urls[0]):
         return [], msg("downloader_status.reddit_media_removed"), "", ""

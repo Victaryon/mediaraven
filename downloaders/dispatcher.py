@@ -202,6 +202,9 @@ async def download_media(
             )
             if rj_files:
                 return await _finalize_success(rj_files, rj_status, rj_short, rj_full, url, platform_label, started)
+            if rj_short:
+                metrics.record_success(platform_label, time.monotonic() - started)
+                return [], rj_status, rj_short, rj_full, False
             if rj_status == msg("downloader_status.reddit_media_removed"):
                 # o yt-dlp só diria "exige login", que engana
                 metrics.record_failure(platform_label, time.monotonic() - started)

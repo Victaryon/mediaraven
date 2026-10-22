@@ -338,3 +338,18 @@ async def test_reddit_midia_removida(tmp_path):
             "https://reddit.com/r/x/comments/z/", str(tmp_path), post_data=post)
     assert files == []
     assert status == reddit_json.msg("downloader_status.reddit_media_removed")
+
+
+@pytest.mark.asyncio
+async def test_post_de_texto_vem_so_com_legenda(tmp_path):
+    page = (
+        '<shreddit-post post-type="text" post-title="T" content-href="https://www.reddit.com/r/x/comments/z/t/" '
+        'domain="self.x"><div id="t3_z-post-rtjson-content" class="md">'
+        '<p>\n  Um &quot;a&quot;\n</p><p><a href="u">dois</a><br>tr&ecirc;s</p></div></shreddit-post>'
+    )
+    d = reddit_json._post_data_from_html(page)
+    assert d['selftext'] == 'Um "a"\n\ndois\n\ntrês'
+    assert '_media_urls' not in d
+    files, status, short, full = await reddit_json.download_reddit_json(
+        'https://www.reddit.com/r/x/comments/z/t/', str(tmp_path), post_data=d)
+    assert files == [] and "Um &quot;a&quot;" in full and status == reddit_json.msg("downloader_status.reddit_text_only")

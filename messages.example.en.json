@@ -83,6 +83,7 @@
     "threads_playwright_fail": "⚠️ Failed to extract Threads media.",
     "x": "🐦 X ({media_type}) [{count} files]",
     "x_text_only": "🐦 X (Text)",
+    "reddit_text_only": "👽 Reddit (Text)",
     "x_fail": "⚠️ Failed to extract X media.",
     "scraper": "🕸️ Scraper Deep Search ({media_type}) [{count} files]",
     "scraper_fail": "⚠️ No media found on the page.",
