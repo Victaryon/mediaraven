@@ -24,6 +24,7 @@ Since **2026-10-21** the JSON API answers `403 Blocked` to anonymous clients —
 3. **`<shreddit-post>`:** gives `post-title`, `post-type` and `content-href`:
     - image/gallery → the `i.redd.it` URLs in the post body, in order (avatars and icons are skipped)
     - video → the post's `<shreddit-player>` `src` (HLS), which the dispatcher hands straight to yt-dlp
+    - text → the post body (`…-post-rtjson-content`), one paragraph per line; a text-only post comes back as a message (`downloader_status.reddit_text_only`), no media
     - crosspost → `content-href` relative to the original post (made absolute); the video is on the page itself
     - no `post-type` → uses `content-href` if it is an image
 4. **App `/s/` links:** Reddit redirects with the slug encoded twice (`hist%25C3%25B3ria`) and the page can't find the post; the bot decodes it first.

@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.4 — Post de texto do Reddit volta como texto
+
+**Causa:** lendo a página do post (v1.3.3), o bot pegava imagem e vídeo, mas não o texto. Post só de texto não tinha mídia, caía no yt-dlp e terminava em "🚫 Vídeo indisponível".
+
+- 📝 **Texto do post:** o corpo (`…-post-rtjson-content`) vira o `selftext`, um parágrafo por linha — também na legenda de posts com mídia.
+- 💬 **Post só de texto:** volta como mensagem com título, texto e link, como X e Threads (nova chave `downloader_status.reddit_text_only`), sem passar pelo yt-dlp.
+- ✅ 429 testes (novo: post de texto lido da página volta só com a legenda).
+
 ## v1.3.3 — Reddit volta a baixar sem a API JSON
 
 **Causa:** em 21/10/2026 o Reddit passou a responder `403 Blocked` na API JSON pra qualquer anônimo (IP residencial ou de datacenter, com ou sem cookies), e o yt-dlp — inclusive a versão do mesmo dia — cai em *"Account authentication is required"*. Todo link do Reddit falhava com "🔑 Vídeo exige login".

@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.4 — Reddit text posts come back as text
+
+**Root cause:** when reading the post page (v1.3.3), the bot took images and video but not the text. A text-only post had no media, fell through to yt-dlp and ended in "🚫 Video unavailable".
+
+- 📝 **Post text:** the body (`…-post-rtjson-content`) becomes `selftext`, one paragraph per line — also in the caption of posts with media.
+- 💬 **Text-only post:** comes back as a message with title, text and link, like X and Threads (new key `downloader_status.reddit_text_only`), without going through yt-dlp.
+- ✅ 429 tests (new: a text post read from the page comes back with just the caption).
+
 ## v1.3.3 — Reddit downloads again without the JSON API
 
 **Root cause:** on 2026-10-21 Reddit started answering `403 Blocked` on the JSON API to any anonymous client (residential or datacenter IP, with or without cookies), and yt-dlp — including that day's build — fails with *"Account authentication is required"*. Every Reddit link failed with "🔑 Video requires login".
