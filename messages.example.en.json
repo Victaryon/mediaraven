@@ -74,6 +74,7 @@
     "instagrapi_fail": "⚠️ Failed to download from Instagram.",
     "reddit_json": "👽 Native API (Images)",
     "reddit_json_fail": "⚠️ Failed to extract Reddit images.",
+    "reddit_media_removed": "🗑️ This post's media was removed from Reddit.",
     "reddit_playwright": "👽 Playwright (Images)",
     "reddit_playwright_fail": "⚠️ Failed to extract Reddit images.",
     "reddit_link_card": "🔗 External link (news)",

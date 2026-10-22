@@ -160,6 +160,15 @@ async def resolve_reddit_external_link(url: str) -> tuple["dict | None", "dict |
     return reddit_external_link(post_data), post_data
 
 
+async def _is_gone(media_url: str) -> bool:
+    """i.redd.it responde 404 (com um PNG genérico) quando a mídia foi apagada."""
+    try:
+        async with state.AIOHTTP_SESSION.head(media_url, timeout=15) as resp:
+            return resp.status == 404
+    except Exception:
+        return False
+
+
 async def download_reddit_json(
     url: str, unique_folder: str, post_data: "dict | None" = None,
 ) -> tuple[list[str], str, str, str]:
@@ -243,4 +252,7 @@ async def download_reddit_json(
     if downloaded_files:
         caption_short, caption_full = build_reddit_caption(title, selftext, url)
         return downloaded_files, msg("downloader_status.reddit_json"), caption_short, caption_full
+    # só posts lidos da página (`_media_urls`); a API JSON já não responde
+    if (post_data or {}).get('_media_urls') and media_urls and await _is_gone(media_urls[0]):
+        return [], msg("downloader_status.reddit_media_removed"), "", ""
     return [], msg("downloader_status.reddit_json_fail"), "", ""

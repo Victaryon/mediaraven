@@ -320,3 +320,21 @@ def test_fetch_reddit_page_resolve_desafio_js():
     assert calls[0][0] == "https://www.reddit.com/r/x/comments/z/t%C3%A9/"
     assert calls[1] == ("https://www.reddit.com/r/x/comments/z/t/",
                         {'solution': 'ab12ab12', 'js_challenge': '1', 'jsc_token': 'tok'})
+
+
+@pytest.mark.asyncio
+async def test_reddit_midia_removida(tmp_path):
+    """Imagem que dá 404 no i.redd.it vira status de mídia removida, não falha genérica."""
+    @asynccontextmanager
+    async def fake_head(url, **kw):
+        yield type("R", (), {"status": 404})()
+
+    session = AsyncMock()
+    session.head = fake_head
+    state.AIOHTTP_SESSION = session
+    post = {'title': 'T', '_media_urls': ['https://i.redd.it/apagada.jpeg']}
+    with patch.object(reddit_json, 'async_download_file', new=AsyncMock(return_value=False)):
+        files, status, _s, _f = await reddit_json.download_reddit_json(
+            "https://reddit.com/r/x/comments/z/", str(tmp_path), post_data=post)
+    assert files == []
+    assert status == reddit_json.msg("downloader_status.reddit_media_removed")

@@ -202,6 +202,10 @@ async def download_media(
             )
             if rj_files:
                 return await _finalize_success(rj_files, rj_status, rj_short, rj_full, url, platform_label, started)
+            if rj_status == msg("downloader_status.reddit_media_removed"):
+                # o yt-dlp só diria "exige login", que engana
+                metrics.record_failure(platform_label, time.monotonic() - started)
+                return [], rj_status, "", "", False
 
         if platform.facebook:
             fb_files, fb_status, fb_short, fb_full = await download_facebook_gallery(url, unique_folder)
