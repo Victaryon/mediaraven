@@ -116,14 +116,21 @@ async def stop_globals(app) -> None:
                 t.cancel()
             await asyncio.gather(*still_pending, return_exceptions=True)
 
-    if state.AIOHTTP_SESSION:
-        await state.AIOHTTP_SESSION.close()
-    if state.PW_CONTEXT:
-        await state.PW_CONTEXT.close()
-    if state.PW_BROWSER:
-        await state.PW_BROWSER.close()
-    if state.PW_MANAGER:
-        await state.PW_MANAGER.stop()
+    # Cada um separado: se o Chromium já morreu (SIGTERM do systemd pro grupo
+    # todo), o close() do contexto falha e não pode impedir o stop() do manager.
+    for name, closer in (
+        ('AIOHTTP_SESSION', lambda o: o.close()),
+        ('PW_CONTEXT', lambda o: o.close()),
+        ('PW_BROWSER', lambda o: o.close()),
+        ('PW_MANAGER', lambda o: o.stop()),
+    ):
+        obj = getattr(state, name, None)
+        if obj is None:
+            continue
+        try:
+            await closer(obj)
+        except Exception as e:
+            logger.debug(lmsg("services.falha_ao_desligar", pool_name=name, e=e))
 
     for pool_name in ('YTDLP_POOL', 'IG_POOL', 'IO_POOL'):
         pool = getattr(state, pool_name, None)
