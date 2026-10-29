@@ -7,6 +7,7 @@ from typing import Any, Optional
 from urllib.parse import urlparse, urlunparse
 
 import aiofiles
+import aiohttp
 from PIL import Image
 from telegram.error import RetryAfter
 
@@ -149,10 +150,12 @@ async def async_download_file(
 ):
     """Baixa via aiohttp. Se return_content_type=True, retorna (ok, content_type)."""
     ct = ''
+    # Timeout por leitura, não pelo arquivo inteiro: um número puro vira
+    # ClientTimeout(total=...) e corta vídeos grandes no meio do download.
+    per_read = cfg("DOWNLOAD_TIMEOUT_SECONDS")
+    timeout = aiohttp.ClientTimeout(total=None, connect=per_read, sock_read=per_read)
     try:
-        async with state.AIOHTTP_SESSION.get(
-            url, timeout=cfg("DOWNLOAD_TIMEOUT_SECONDS"), headers=headers,
-        ) as response:
+        async with state.AIOHTTP_SESSION.get(url, timeout=timeout, headers=headers) as response:
             ct = (response.headers.get('Content-Type') or '').lower()
             if response.status == 200:
                 if ct.startswith(('text/html', 'application/json')):
@@ -175,6 +178,13 @@ async def async_download_file(
             return (False, ct) if return_content_type else False
     except Exception as e:
         logger.warning(lmsg("utils.erro_no_aiohttp", url=url, e=e))
+        # Não deixa arquivo parcial pra trás: quem lista a pasta depois
+        # (fallback genérico) o trataria como mídia baixada.
+        try:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        except OSError:
+            pass
     return (False, ct) if return_content_type else False
 
 

@@ -370,7 +370,9 @@ async def _gallery_dl_run(url: str, folder: str) -> list[str]:
 
     files_before = set(_list_files_in(folder))
 
-    async with _GALLERY_DL_LOCK:
+    await _GALLERY_DL_LOCK.acquire()
+    release_now = True
+    try:
         global _GALLERY_DL_LOADED
         from gallery_dl import config as gdl_config, job as gdl_job
 
@@ -397,18 +399,28 @@ async def _gallery_dl_run(url: str, folder: str) -> list[str]:
             except Exception as e:
                 logger.debug(lmsg("fallback.gallery_dl_job", e=e))
 
+        job = loop.run_in_executor(state.YTDLP_POOL, _run)
         try:
-            await asyncio.wait_for(
-                loop.run_in_executor(state.YTDLP_POOL, _run),
-                timeout=cfg("SCRAPE_GALLERY_DL_TIMEOUT_S"),
-            )
+            await asyncio.wait_for(asyncio.shield(job), timeout=cfg("SCRAPE_GALLERY_DL_TIMEOUT_S"))
         except asyncio.TimeoutError:
+            # A thread continua rodando com o config global apontando pra esta
+            # pasta; o lock só é liberado quando ela terminar, senão a próxima
+            # chamada troca o base-directory no meio do download.
+            job.add_done_callback(lambda _: _GALLERY_DL_LOCK.release())
+            release_now = False
             logger.warning(lmsg(
                 "fallback.gallery_dl_timeout",
                 timeout=cfg("SCRAPE_GALLERY_DL_TIMEOUT_S"), url=safe_url(url),
             ))
+        except asyncio.CancelledError:
+            job.add_done_callback(lambda _: _GALLERY_DL_LOCK.release())
+            release_now = False
+            raise
         except Exception as e:
             logger.debug(lmsg("fallback.gallery_dl_executor", e=e))
+    finally:
+        if release_now:
+            _GALLERY_DL_LOCK.release()
 
     files_after = set(_list_files_in(folder))
     new_files = sorted(files_after - files_before)

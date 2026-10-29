@@ -18,14 +18,20 @@ def extract_firefox_cookies() -> list[dict]:
         logger.warning(lmsg("cookies.banco_de_cookies", db_path=db_path))
         return []
 
-    fd, temp_db = tempfile.mkstemp(suffix=".sqlite")
-    os.close(fd)
-    shutil.copy2(db_path, temp_db)
+    # Copia o banco junto com o -wal/-shm: com o Firefox aberto, cookies
+    # recém-gravados ainda estão só no WAL.
+    temp_dir = tempfile.mkdtemp(prefix="ffcookies_")
+    temp_db = os.path.join(temp_dir, 'cookies.sqlite')
 
     cookies = []
     MAX_PLAYWRIGHT_EXPIRY = 253402300799
 
+    conn = None
     try:
+        for suffix in ('', '-wal', '-shm'):
+            if os.path.exists(db_path + suffix):
+                shutil.copy2(db_path + suffix, temp_db + suffix)
+
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("SELECT name, value, host, path, expiry, isSecure, isHttpOnly FROM moz_cookies")
@@ -37,6 +43,9 @@ def extract_firefox_cookies() -> list[dict]:
             if expiry is not None:
                 try:
                     val = int(float(expiry))
+                    # Firefox recente grava expiry em milissegundos.
+                    if val > 10**11:
+                        val //= 1000
                     if val > MAX_PLAYWRIGHT_EXPIRY:
                         clean_expires = MAX_PLAYWRIGHT_EXPIRY
                     elif val > 0:
@@ -53,16 +62,21 @@ def extract_firefox_cookies() -> list[dict]:
                 'secure': bool(isSecure),
                 'httpOnly': bool(isHttpOnly)
             })
-        conn.close()
     except Exception as e:
         logger.error(lmsg("cookies.erro_ao_ler", e=e), exc_info=True)
     finally:
-        if os.path.exists(temp_db):
-            os.remove(temp_db)
+        if conn is not None:
+            conn.close()
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
     return cookies
 
 
 def get_aiohttp_cookies_for_url(url: str) -> dict[str, str]:
-    domain = urlparse(url).netloc.lower()
-    return {c['name']: c['value'] for c in state.FIREFOX_COOKIES_CACHE if c['domain'].lstrip('.').lower() in domain}
+    host = (urlparse(url).hostname or '').lower()
+
+    def _matches(cookie_domain: str) -> bool:
+        cookie_domain = cookie_domain.lstrip('.').lower()
+        return host == cookie_domain or host.endswith('.' + cookie_domain)
+
+    return {c['name']: c['value'] for c in state.FIREFOX_COOKIES_CACHE if _matches(c['domain'])}

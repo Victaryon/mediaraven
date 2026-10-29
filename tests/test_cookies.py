@@ -55,7 +55,7 @@ def test_extract_firefox_cookies_clamps_future_date(tmp_path):
     profile = tmp_path / "profile"
     profile.mkdir()
     db_path = profile / "cookies.sqlite"
-    bogus_future = 9999999999999
+    bogus_future = 10**16
     _make_firefox_db(str(db_path), rows=[("bogus", "v", "x.com", "/", bogus_future, 0, 0)])
 
     with patch.object(cookies, "FIREFOX_PROFILE_PATH", str(profile)):
@@ -84,5 +84,50 @@ def test_get_aiohttp_cookies_empty_when_no_match():
     try:
         got = cookies.get_aiohttp_cookies_for_url("https://instagram.com/foo")
         assert got == {}
+    finally:
+        state.FIREFOX_COOKIES_CACHE = []
+
+
+def test_extract_firefox_cookies_converts_milliseconds(tmp_path):
+    profile = tmp_path / "profile"
+    profile.mkdir()
+    _make_firefox_db(str(profile / "cookies.sqlite"), rows=[("ms", "v", "x.com", "/", 1827794301765, 0, 0)])
+
+    with patch.object(cookies, "FIREFOX_PROFILE_PATH", str(profile)):
+        result = cookies.extract_firefox_cookies()
+
+    assert result[0]['expires'] == 1827794301
+
+
+def test_extract_firefox_cookies_reads_wal(tmp_path):
+    profile = tmp_path / "profile"
+    profile.mkdir()
+    db_path = str(profile / "cookies.sqlite")
+    _make_firefox_db(db_path, rows=[("old", "1", "x.com", "/", 0, 0, 0)])
+
+    # Simula o Firefox aberto: grava em WAL e não faz checkpoint.
+    writer = sqlite3.connect(db_path)
+    writer.execute("PRAGMA journal_mode=WAL")
+    writer.execute("PRAGMA wal_autocheckpoint=0")
+    writer.execute("INSERT INTO moz_cookies VALUES ('fresh', '2', 'x.com', '/', 0, 0, 0)")
+    writer.commit()
+    try:
+        assert os.path.getsize(db_path + "-wal") > 0
+        with patch.object(cookies, "FIREFOX_PROFILE_PATH", str(profile)):
+            names = {c['name'] for c in cookies.extract_firefox_cookies()}
+    finally:
+        writer.close()
+
+    assert names == {'old', 'fresh'}
+
+
+def test_get_aiohttp_cookies_ignores_substring_domains():
+    state.FIREFOX_COOKIES_CACHE = [
+        {'name': 'a', 'value': '1', 'domain': '.x.com'},
+        {'name': 'b', 'value': '2', 'domain': 'it.com'},
+    ]
+    try:
+        assert cookies.get_aiohttp_cookies_for_url("https://reddit.com/") == {}
+        assert cookies.get_aiohttp_cookies_for_url("https://x.com/a") == {'a': '1'}
     finally:
         state.FIREFOX_COOKIES_CACHE = []

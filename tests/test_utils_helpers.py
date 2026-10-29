@@ -1,5 +1,9 @@
 """Testes dos helpers puros de utils: safe_url, normalize_image e chunk_html_text."""
+import asyncio
 import os
+from unittest.mock import patch
+
+import pytest
 
 from PIL import Image
 
@@ -136,3 +140,67 @@ def test_normalize_image_rejects_garbage(tmp_path):
         f.write(b"definitely not a PNG")
     assert normalize_image(p) is None
     assert not os.path.exists(p)
+
+
+class _FakeContent:
+    def __init__(self, chunks, fail_after):
+        self._chunks = chunks
+        self._fail_after = fail_after
+
+    async def iter_chunked(self, _size):
+        for i, chunk in enumerate(self._chunks):
+            if i == self._fail_after:
+                raise asyncio.TimeoutError()
+            yield chunk
+
+
+class _FakeResponse:
+    def __init__(self, content):
+        self.status = 200
+        self.headers = {'Content-Type': 'video/mp4'}
+        self.content = content
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
+
+
+class _FakeSession:
+    def __init__(self, response):
+        self.response = response
+        self.kwargs = None
+
+    def get(self, url, **kwargs):
+        self.kwargs = kwargs
+        return self.response
+
+
+@pytest.mark.asyncio
+async def test_async_download_file_removes_partial_file(tmp_path):
+    import state
+    from utils import async_download_file
+
+    target = tmp_path / "video.mp4"
+    session = _FakeSession(_FakeResponse(_FakeContent([b'a' * 10, b'b' * 10], fail_after=1)))
+    with patch.object(state, 'AIOHTTP_SESSION', session):
+        ok = await async_download_file("https://cdn.example/v.mp4", str(target))
+
+    assert ok is False
+    assert not target.exists()
+
+
+@pytest.mark.asyncio
+async def test_async_download_file_timeout_is_per_read(tmp_path):
+    import state
+    from utils import async_download_file
+
+    session = _FakeSession(_FakeResponse(_FakeContent([b'x' * 10], fail_after=-1)))
+    with patch.object(state, 'AIOHTTP_SESSION', session):
+        ok = await async_download_file("https://cdn.example/v.mp4", str(tmp_path / "v.mp4"))
+
+    assert ok is True
+    timeout = session.kwargs['timeout']
+    assert timeout.total is None
+    assert timeout.sock_read == cfg("DOWNLOAD_TIMEOUT_SECONDS")

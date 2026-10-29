@@ -39,6 +39,8 @@ def ig_pending_dec() -> int:
 
 
 background_tasks = set()
+# Loops de manutenção (refresh do Playwright, métricas); cancelados no shutdown.
+periodic_tasks = set()
 
 DENO_PATH = None
 FFMPEG_PATH = None

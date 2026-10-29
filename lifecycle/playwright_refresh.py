@@ -7,6 +7,7 @@ import psutil
 import state
 from config import (
     PLAYWRIGHT_UA,
+    PW_CONCURRENCY,
     PW_REFRESH_CHECK_INTERVAL_MIN,
     PW_REFRESH_MAX_INTERVAL_HOURS,
     PW_REFRESH_MIN_INTERVAL_MIN,
@@ -33,6 +34,33 @@ def _get_process_rss_mb() -> Optional[float]:
     except (psutil.Error, OSError) as e:
         logger.debug(lmsg("playwright_refresh.falha_ao_ler", e=e))
         return None
+
+
+async def new_context_with_cookies():
+    """Cria um contexto Playwright novo e injeta os cookies do Firefox.
+
+    Relê o banco de cookies numa thread (sqlite bloqueia o loop). Se a leitura
+    vier vazia, mantém o cache anterior em vez de apagá-lo.
+    """
+    context = await state.PW_BROWSER.new_context(
+        user_agent=PLAYWRIGHT_UA,
+        viewport={'width': PW_VIEWPORT_WIDTH, 'height': PW_VIEWPORT_HEIGHT},
+        # Logado, o x.com registra um service worker que prende o renderer
+        # (~300-500 MB) vivo depois do page.close() até o próximo refresh.
+        service_workers="block",
+    )
+
+    cookies = await asyncio.to_thread(extract_firefox_cookies)
+    if cookies:
+        state.FIREFOX_COOKIES_CACHE = cookies
+
+    if state.FIREFOX_COOKIES_CACHE:
+        try:
+            await context.add_cookies(state.FIREFOX_COOKIES_CACHE)
+            logger.info(lmsg("playwright_refresh.x_cookies_do", arg0=len(state.FIREFOX_COOKIES_CACHE)))
+        except Exception as e:
+            logger.warning(lmsg("playwright_refresh.erro_ao_injetar", e=e))
+    return context
 
 
 async def periodic_playwright_refresh() -> None:
@@ -66,38 +94,31 @@ async def periodic_playwright_refresh() -> None:
         logger.info(lmsg("playwright_refresh.iniciando_limpeza_de", reason=reason))
         last_refresh = now
 
+        new_context = None
         try:
-            new_context = await state.PW_BROWSER.new_context(
-                user_agent=PLAYWRIGHT_UA,
-                viewport={'width': PW_VIEWPORT_WIDTH, 'height': PW_VIEWPORT_HEIGHT},
-                service_workers="block",  # ver init_globals em services.py
-            )
+            new_context = await new_context_with_cookies()
 
-            state.FIREFOX_COOKIES_CACHE = extract_firefox_cookies()
-
-            if state.FIREFOX_COOKIES_CACHE:
-                try:
-                    await new_context.add_cookies(state.FIREFOX_COOKIES_CACHE)
-                    logger.info(lmsg("playwright_refresh.x_cookies_do", arg0=len(state.FIREFOX_COOKIES_CACHE)))
-                except Exception as e:
-                    logger.warning(lmsg("playwright_refresh.erro_ao_injetar", e=e))
-
-            tickets = []
-            for _ in range(3):
+            # Segura todos os slots: nenhuma página aberta no contexto antigo
+            # quando ele for fechado.
+            for _ in range(PW_CONCURRENCY):
                 await state.PW_SEMAPHORE.acquire()
-                tickets.append(True)
-
             try:
                 old_context = state.PW_CONTEXT
                 state.PW_CONTEXT = new_context
+                new_context = None
 
                 if old_context:
                     await old_context.close()
 
                 logger.info(lmsg("playwright_refresh.contexto_playwright_recriado"))
             finally:
-                for _ in tickets:
+                for _ in range(PW_CONCURRENCY):
                     state.PW_SEMAPHORE.release()
 
         except Exception as e:
             logger.error(lmsg("playwright_refresh.erro_ao_recriar", e=e), exc_info=True)
+            if new_context is not None:
+                try:
+                    await new_context.close()
+                except Exception:
+                    pass
