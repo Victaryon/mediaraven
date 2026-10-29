@@ -155,8 +155,7 @@ async def _fetch_html(url: str) -> tuple[Optional[str], Optional[str]]:
 async def download_threads(url: str, unique_folder: str) -> tuple[list[str], str, str, str]:
     logger.info(lmsg("threads.iniciando_extra_o_via", arg0=safe_url(url)))
 
-    if not os.path.exists(unique_folder):
-        os.makedirs(unique_folder)
+    os.makedirs(unique_folder, exist_ok=True)
 
     if not state.PW_BROWSER or not state.PW_CONTEXT:
         return [], msg("downloader_status.playwright_not_running"), "", ""

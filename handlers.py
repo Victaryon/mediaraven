@@ -385,7 +385,6 @@ async def process_media_request(
     message_id: int,
     url: str,
     target_lang: Optional[str] = None,
-    request_id: Optional[str] = None,
     idx: int = 1,
     total: int = 1,
     user_id: Optional[int] = None,
@@ -434,7 +433,7 @@ async def process_media_request(
             return await process_media_request(
                 context, chat_id, message_id, url,
                 target_lang=chosen_lang,
-                request_id=request_id, idx=idx, total=total,
+                idx=idx, total=total,
                 user_id=user_id, is_retry=is_retry,
             )
 

@@ -89,8 +89,7 @@ def _web_media_info(url: str, timeout: float):
 
 async def download_instagram_api(url: str, unique_folder: str) -> tuple[list[str], str, str, str]:
     logger.info(lmsg("instagram.iniciando_instagrapi_para", arg0=safe_url(url)))
-    if not os.path.exists(unique_folder):
-        os.makedirs(unique_folder)
+    os.makedirs(unique_folder, exist_ok=True)
 
     timeout = cfg("DOWNLOAD_TIMEOUT_SECONDS")
 

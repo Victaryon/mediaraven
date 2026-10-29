@@ -277,8 +277,7 @@ async def _try_authenticated(url: str, tweet_id: str) -> tuple[list[tuple[str, s
 async def download_x(url: str, unique_folder: str) -> tuple[list[str], str, str, str]:
     logger.info(lmsg("x.iniciando_extra_o_para", arg0=safe_url(url)))
 
-    if not os.path.exists(unique_folder):
-        os.makedirs(unique_folder)
+    os.makedirs(unique_folder, exist_ok=True)
 
     url = _normalize_x_url(url)
     tweet_id = _extract_tweet_id(url)

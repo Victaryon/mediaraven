@@ -125,8 +125,7 @@ async def _fetch_embed_html(shortcode: str) -> Optional[str]:
 async def download_instagram_embed(url: str, unique_folder: str) -> tuple[list[str], str, str, str]:
     logger.info(lmsg("instagram_embed.tentando_ig_embed", arg0=safe_url(url)))
 
-    if not os.path.exists(unique_folder):
-        os.makedirs(unique_folder)
+    os.makedirs(unique_folder, exist_ok=True)
 
     shortcode = _extract_shortcode(url)
     if not shortcode:

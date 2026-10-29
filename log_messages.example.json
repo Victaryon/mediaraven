@@ -188,8 +188,6 @@
   "services": {
     "sess_o_aiohttp_global": "🌐 Sessão aiohttp global iniciada (timeout default {AIOHTTP_TOTAL_TIMEOUT}s).",
     "iniciando_playwright_navegador": "🌐 Iniciando Playwright (Navegador Global)...",
-    "x_cookies_do": "✅ {arg0} cookies do Firefox carregados no Playwright!",
-    "erro_ao_injetar": "⚠️ Erro ao injetar cookies no Playwright: {e}",
     "contexto_playwright_pronto": "✅ Contexto Playwright pronto com cookies carregados!",
     "todos_os_servi_os": "✅ Todos os serviços globais prontos!",
     "tarefa_de_limpeza": "🧹 Tarefa de limpeza de memória agendada.",

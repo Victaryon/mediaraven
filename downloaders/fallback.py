@@ -440,8 +440,7 @@ async def take_page_screenshot(folder: str, url: str) -> Optional[str]:
     """Captura screenshot da fold da página. Retorna o path ou None se falhar."""
     if not state.PW_BROWSER or not state.PW_CONTEXT:
         return None
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    os.makedirs(folder, exist_ok=True)
     out_path = os.path.join(folder, "screenshot.jpg")
     async with state.PW_SEMAPHORE:
         page = None
@@ -501,8 +500,7 @@ async def scrape_fallback(
 ) -> tuple[list[str], str, str, str, bool]:
     logger.info(lmsg("fallback.iniciando_scraping_multi", arg0=safe_url(url)))
 
-    if not os.path.exists(unique_folder):
-        os.makedirs(unique_folder)
+    os.makedirs(unique_folder, exist_ok=True)
 
     pw_available = bool(state.PW_BROWSER and state.PW_CONTEXT)
 

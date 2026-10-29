@@ -185,8 +185,7 @@ async def download_reddit_json(
     url: str, unique_folder: str, post_data: "dict | None" = None,
 ) -> tuple[list[str], str, str, str]:
     logger.info(lmsg("reddit_json.iniciando_extra_o_via", arg0=safe_url(url)))
-    if not os.path.exists(unique_folder):
-        os.makedirs(unique_folder)
+    os.makedirs(unique_folder, exist_ok=True)
 
     media_urls = []
     downloaded_files = []

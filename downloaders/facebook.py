@@ -31,8 +31,7 @@ async def download_facebook_gallery(
     url: str, unique_folder: str,
 ) -> tuple[list[str], str, str, str]:
     logger.info(lmsg("facebook.tentando_gallery_dl", arg0=safe_url(url)))
-    if not os.path.exists(unique_folder):
-        os.makedirs(unique_folder)
+    os.makedirs(unique_folder, exist_ok=True)
 
     files = await _gallery_dl_run(url, unique_folder)
     if not files:

@@ -88,7 +88,6 @@
     "scraper": "🕸️ Scraper Deep Search ({media_type}) [{count} arquivos]",
     "scraper_fail": "⚠️ Nenhuma mídia encontrada na página.",
     "scraper_paywall": "🔒 Conteúdo bloqueado (paywall ou login).",
-    "scraper_fast_path": "⚡ Scraper Fast Path ({media_type}) [{count} arquivos]",
     "scraper_generic_ytdlp": "🧩 yt-dlp Generic ({media_type}) [{count} arquivos]",
     "scraper_gallerydl": "🖼️ gallery-dl ({media_type}) [{count} arquivos]",
     "playwright_not_running": "⚠️ Sistema indisponível no momento, tente novamente em instantes."

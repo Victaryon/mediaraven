@@ -29,8 +29,7 @@ def _force_old_reddit(url: str) -> str:
 
 async def download_reddit_playwright(url: str, unique_folder: str) -> tuple[list[str], str, str, str]:
     logger.info(lmsg("reddit_playwright.iniciando_extra_o_via", arg0=safe_url(url)))
-    if not os.path.exists(unique_folder):
-        os.makedirs(unique_folder)
+    os.makedirs(unique_folder, exist_ok=True)
 
     downloaded_files = []
     media_urls = []

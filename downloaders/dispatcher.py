@@ -145,8 +145,7 @@ async def download_media(
     started = time.monotonic()
     platform_label = 'other'
     try:
-        if not os.path.exists(unique_folder):
-            os.makedirs(unique_folder)
+        os.makedirs(unique_folder, exist_ok=True)
 
         url = await _resolve_short_reddit_url(url)
         url = await _resolve_facebook_share_url(url)
