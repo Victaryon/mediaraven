@@ -252,7 +252,8 @@ def _attempt_order(
     has_firefox_cookie: bool, target_lang: Optional[str], platform: Optional[Platform] = None,
 ) -> list[str]:
     attempts: list[str] = []
-    cookie_first = bool(target_lang and target_lang != 'original') or bool(platform and platform.tiktok)
+    # Reddit bloqueia IP de datacenter sem login: sem cookie é tentativa perdida.
+    cookie_first = bool(target_lang and target_lang != 'original') or bool(platform and (platform.tiktok or platform.reddit))
     if cookie_first:
         if has_firefox_cookie:
             attempts.append("with_cookie")

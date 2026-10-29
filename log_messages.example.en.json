@@ -166,6 +166,9 @@
     "downloads_all_failed": "⚠️ Tweet {tweet_id}: {n} URLs found but downloads failed"
   },
   "handlers": {
+    "erro_rede": "🌐 Telegram network error (polling recovers): {e}",
+    "erro_nao_tratado": "❌ Unhandled error: {e}",
+    "falha_aviso_erro": "Failed to send error notice: {e}",
     "falha_no_prompt": "Screenshot prompt failed: {e}",
     "screenshot_falhou_para": "⚠️ Screenshot failed for {url}",
     "falha_ao_atualizar": "Failed to update 'queue_busy' status: {e}",

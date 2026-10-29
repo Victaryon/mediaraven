@@ -1,10 +1,13 @@
 import asyncio
+import html
 import logging
 import os
 import random
+import time
 from typing import Any, Optional
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.error import NetworkError
 from telegram.ext import ContextTypes
 
 import state
@@ -26,6 +29,38 @@ from telegram_io import send_downloaded_media
 from utils import chunk_html_text, cycle_status_message, is_ignored_domain, safe_cleanup, safe_url
 
 logger = logging.getLogger(__name__)
+
+
+_ERROR_NOTICE_INTERVAL_S = 300
+_last_error_notice = 0.0
+
+
+async def notify_error(context: ContextTypes.DEFAULT_TYPE, err: BaseException, where: str) -> None:
+    """Avisa ERROR_NOTIFY_CHAT_ID do erro, no máximo 1 aviso a cada 5 min."""
+    global _last_error_notice
+    target = cfg("ERROR_NOTIFY_CHAT_ID")
+    now = time.monotonic()
+    if not target or now - _last_error_notice < _ERROR_NOTICE_INTERVAL_S:
+        return
+    _last_error_notice = now
+    detail = html.escape(f"{type(err).__name__}: {err}")[:500]
+    try:
+        await context.bot.send_message(
+            target, msg("status.error_notice", where=html.escape(where), error=detail), parse_mode='HTML',
+        )
+    except Exception as e:
+        logger.debug(lmsg("handlers.falha_aviso_erro", e=e))
+
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Erros que escapam dos handlers (callbacks, polling...)."""
+    err = context.error
+    if isinstance(err, NetworkError):
+        # oscilação de rede/servidor do Telegram; o polling se recupera sozinho
+        logger.warning(lmsg("handlers.erro_rede", e=err))
+        return
+    logger.error(lmsg("handlers.erro_nao_tratado", e=err), exc_info=err)
+    await notify_error(context, err, "handler")
 
 
 # prefixo do callback_data: (store_key, nome nos alerts, nome nos buttons, chave do prompt)
@@ -478,9 +513,10 @@ async def process_media_request(
         if notice := state.download_notice.get():
             await _send_text_in_chunks(context, chat_id, message_id, notice, show_preview=False)
 
-    except Exception:
+    except Exception as e:
         logger.exception("⚠️ Erro ao processar link")
         await _safe_edit(status_msg, msg("status.internal_error", suffix=suffix))
+        await notify_error(context, e, safe_url(url))
 
     finally:
         if status_task is not None:

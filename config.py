@@ -127,6 +127,8 @@ MAX_URLS_PER_MESSAGE = _env_int("MAX_URLS_PER_MESSAGE", 20)
 IGNORED_DOMAINS: list[str] = _csv_strings(os.getenv("IGNORED_DOMAINS", ""))
 DOWNLOAD_TIMEOUT_SECONDS = _env_int("DOWNLOAD_TIMEOUT_SECONDS", 15)
 DOWNLOAD_SEGMENTS = _env_int("DOWNLOAD_SEGMENTS", 4)
+# Chat que recebe aviso de erro inesperado (0 = desligado).
+ERROR_NOTIFY_CHAT_ID = _env_int("ERROR_NOTIFY_CHAT_ID", 0)
 SAFE_URL_MAX_LENGTH = _env_int("SAFE_URL_MAX_LENGTH", 200)
 STATUS_CYCLE_INTERVAL = _env_float("STATUS_CYCLE_INTERVAL", 5.0)
 

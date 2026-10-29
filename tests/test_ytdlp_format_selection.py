@@ -247,6 +247,10 @@ def test_detect_platform_non_tiktok_is_false():
     assert _detect_platform("https://www.youtube.com/watch?v=x").tiktok is False
 
 
+def test_attempt_order_reddit_prioritizes_cookies():
+    assert _ytdlp._attempt_order(True, None, Platform(reddit=True)) == ["with_cookie", "no_cookie"]
+
+
 def test_attempt_order_tiktok_prioritizes_cookies():
     tiktok = Platform(tiktok=True)
     assert _ytdlp._attempt_order(True, None, tiktok) == ["with_cookie", "no_cookie"]

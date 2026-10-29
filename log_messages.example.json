@@ -166,6 +166,9 @@
     "downloads_all_failed": "⚠️ Tweet {tweet_id}: {n} URLs encontradas mas downloads falharam"
   },
   "handlers": {
+    "erro_rede": "🌐 Erro de rede com o Telegram (o polling se recupera): {e}",
+    "erro_nao_tratado": "❌ Erro não tratado: {e}",
+    "falha_aviso_erro": "Falha ao enviar aviso de erro: {e}",
     "falha_no_prompt": "Falha no prompt de screenshot: {e}",
     "screenshot_falhou_para": "⚠️ Screenshot falhou para {url}",
     "falha_ao_atualizar": "Falha ao atualizar status 'queue_busy': {e}",

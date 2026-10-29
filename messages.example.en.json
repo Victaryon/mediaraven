@@ -42,7 +42,8 @@
     "screenshot_taking": "📸 Capturing screenshot of the page...{suffix}",
     "sending": "📤 Sending {count} files...{suffix}",
     "retry_failed": "❌ Retry failed.{suffix}",
-    "internal_error": "❌ Internal error sending the files.{suffix}"
+    "internal_error": "❌ Internal error sending the files.{suffix}",
+    "error_notice": "⚠️ <b>MediaRaven: unexpected error</b>\nWhere: {where}\n<code>{error}</code>"
   },
 
   "status_cycle": [
