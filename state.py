@@ -5,6 +5,7 @@ variáveis reatribuídas em init_globals/periodic_playwright_refresh ficam
 dessincronizadas no namespace do importador.
 """
 import asyncio
+import contextvars
 import threading
 import weakref
 from concurrent.futures import ThreadPoolExecutor
@@ -41,6 +42,10 @@ def ig_pending_dec() -> int:
 background_tasks = set()
 # Loops de manutenção (refresh do Playwright, métricas); cancelados no shutdown.
 periodic_tasks = set()
+
+# Aviso extra pro usuário sobre o download atual (ex.: álbum incompleto).
+# O dispatcher grava; o handler envia depois da mídia.
+download_notice: contextvars.ContextVar[str] = contextvars.ContextVar("download_notice", default="")
 
 DENO_PATH = None
 FFMPEG_PATH = None

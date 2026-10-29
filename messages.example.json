@@ -90,6 +90,8 @@
     "scraper_paywall": "🔒 Conteúdo bloqueado (paywall ou login).",
     "scraper_generic_ytdlp": "🧩 yt-dlp Generic ({media_type}) [{count} arquivos]",
     "scraper_gallerydl": "🖼️ gallery-dl ({media_type}) [{count} arquivos]",
+    "gallery_incomplete": "⚠️ Álbum incompleto: {missing} de {total} arquivos não puderam ser baixados.",
+    "gallery_maybe_incomplete": "⚠️ O álbum pode ter vindo incompleto (tempo limite do download).",
     "playwright_not_running": "⚠️ Sistema indisponível no momento, tente novamente em instantes."
   },
 

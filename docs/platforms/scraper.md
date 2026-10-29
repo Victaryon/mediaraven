@@ -62,6 +62,7 @@ Se nada deu certo e `SCRAPE_SCREENSHOT_FALLBACK=yes`, o bot **pergunta** ao usu�
 | `SCRAPE_HLS_TIMEOUT_S` | `180` | Timeout do ffmpeg ao mux'ar HLS/DASH. |
 | `SCRAPE_GALLERY_DL_ENABLE` | `"yes"` | Liga/desliga o tier 3. |
 | `SCRAPE_GALLERY_DL_TIMEOUT_S` | `90` | Timeout por chamada gallery-dl. |
+| `SCRAPE_GALLERY_DL_PARALLEL_FILES` | `3` | Arquivos do álbum baixados ao mesmo tempo (o gallery-dl só lista; o bot baixa). |
 | `SCRAPE_PAYWALL_BYPASS` | `"yes"` | Liga bypass de paywall (Googlebot UA + archive.ph). |
 | `SCRAPE_ARTICLE_EXTRACT` | `"yes"` | Extrai corpo de artigo via trafilatura como caption. |
 | `SCRAPE_ARTICLE_MIN_CHARS` | `300` | Mínimo de chars pra considerar artigo. |

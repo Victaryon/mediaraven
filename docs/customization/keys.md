@@ -41,6 +41,7 @@
 | `SCRAPE_SCREENSHOT_FALLBACK` | `"yes"` | Oferece screenshot quando nada acha | — | — |
 | `SCRAPE_GALLERY_DL_ENABLE` | `"yes"` | Liga gallery-dl | — | — |
 | `SCRAPE_GALLERY_DL_TIMEOUT_S` | `90` | Timeout por chamada gallery-dl | 30 | 300 |
+| `SCRAPE_GALLERY_DL_PARALLEL_FILES` | `3` | Arquivos de álbum baixados em paralelo | 1 | 8 |
 | `SCRAPE_PAYWALL_BYPASS` | `"yes"` | Liga Googlebot UA + archive.ph | — | — |
 | `SCRAPE_ARCHIVE_TIMEOUT_S` | `15` | Timeout archive.ph | 5 | 60 |
 | `SCRAPE_ARTICLE_EXTRACT` | `"yes"` | Extrai corpo de artigo via trafilatura | — | — |
@@ -73,6 +74,7 @@
 | Chave | Default | Descrição | Min | Max |
 |---|---|---|---|---|
 | `DOWNLOAD_TIMEOUT_SECONDS` | `15` | Timeout por arquivo individual via aiohttp | 5 | 120 |
+| `DOWNLOAD_SEGMENTS` | `4` | Conexões (faixas Range) por arquivo ≥ 4 MB | 1 | 16 |
 | `PW_GOTO_TIMEOUT_MS` | `25000` | Timeout (ms) do `page.goto()` | 5000 | 120000 |
 | `SAFE_URL_MAX_LENGTH` | `200` | Max chars de URL nos logs | 50 | 1000 |
 

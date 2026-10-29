@@ -90,7 +90,9 @@
     "article_detected": "📰 Article detected ({body_len} chars body, {caption_len} chars caption) at {url}",
     "combined_stats": "🔎 Combined: {n_html} HTML ({source}) + {n_pw} Playwright → {n_combined} (after dedupe), {n_iframes} embed iframe(s).",
     "article_media_filtered": "📰 Filtering article media: {n_combined} official candidate(s) (og:image/jsonld), discarding the rest.",
-    "pinterest_media_filtered": "📌 Filtering Pinterest media: {n_combined} official candidate(s) (og:image/jsonld), discarding the rest."
+    "pinterest_media_filtered": "📌 Filtering Pinterest media: {n_combined} official candidate(s) (og:image/jsonld), discarding the rest.",
+    "gallery_dl_parallel": "📚 gallery-dl listed {count} file(s); downloading in parallel: {url}",
+    "gallery_dl_incomplete": "⚠️ gallery-dl: {missing} of {total} file(s) failed: {url}"
   },
   "instagram": {
     "iniciando_instagrapi_para": "📸 Fetching the post through the Instagram web API: {arg0}",
@@ -251,6 +253,8 @@
     "erro_ffmpeg_x": "⚠️ FFmpeg error: {err_msg}",
     "ffmpeg_travou_e": "⚠️ FFmpeg froze and was interrupted (60s timeout).",
     "erro_fatal_no_2": "⚠️ Fatal error in FFmpeg Merge: {e}",
-    "skip_image_too_small": "⏭️ Skip (image {width}x{height} < min_size {min_size}): {filepath}"
+    "skip_image_too_small": "⏭️ Skip (image {width}x{height} < min_size {min_size}): {filepath}",
+    "segment_probe_failed": "🔎 Range probe failed for {url}: {e}",
+    "segment_retry": "🔁 Resuming range {start}-{end} of {url}: {e}"
   }
 }

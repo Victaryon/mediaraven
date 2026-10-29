@@ -32,7 +32,7 @@ from ._ytdlp import (
 )
 
 from .facebook import _FB_NUMERIC_USER_RE, download_facebook_gallery, facebook_owner_mismatch
-from .fallback import _build_status, _gallery_dl_run, fetch_article_caption, prefers_gallery_dl, scrape_fallback
+from .fallback import _build_status, _gallery_dl_run, fetch_article_caption, gallery_dl_download, prefers_gallery_dl, scrape_fallback
 from .instagram import download_instagram_api
 from .instagram_embed import download_instagram_embed
 from .reddit_json import download_reddit_json, resolve_reddit_external_link
@@ -217,8 +217,14 @@ async def download_media(
 
         if platform_label == 'other' and prefers_gallery_dl(url):
             logger.info(lmsg("dispatcher.gallery_dl_first", url=safe_url(url)))
-            gdl_files = await _gallery_dl_run(url, unique_folder)
+            gdl_files, missing = await gallery_dl_download(url, unique_folder)
             if gdl_files:
+                if missing > 0:
+                    state.download_notice.set(msg(
+                        "downloader_status.gallery_incomplete", missing=missing, total=len(gdl_files) + missing,
+                    ))
+                elif missing < 0:
+                    state.download_notice.set(msg("downloader_status.gallery_maybe_incomplete"))
                 return await _finalize_success(
                     gdl_files, _build_status(gdl_files, "downloader_status.scraper_gallerydl"),
                     "", "", url, platform_label, started,

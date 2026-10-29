@@ -413,6 +413,7 @@ async def process_media_request(
         link_folder = os.path.join(unique_folder, "content")
 
         detect_lang = should_show_prompt("lang", chat_id, user_id or 0)
+        state.download_notice.set("")
         files, status_or_error, desc_short, desc_full, is_article = await download_media(
             url, link_folder, target_lang, detect_languages=detect_lang,
         )
@@ -474,6 +475,8 @@ async def process_media_request(
             context, chat_id, message_id, status_msg, files, desc_short, desc_full,
             suffix, user_id, idx, is_article=is_article,
         )
+        if notice := state.download_notice.get():
+            await _send_text_in_chunks(context, chat_id, message_id, notice, show_preview=False)
 
     except Exception:
         logger.exception("⚠️ Erro ao processar link")
