@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import logging
 import os
 import shutil
@@ -119,6 +120,35 @@ def normalize_image(filepath: str, min_size: int = 50, quality: int = 95) -> Opt
         except OSError:
             pass
         return None
+
+
+def dedupe_identical_files(files: list[str]) -> list[str]:
+    """Remove (do disco e da lista) arquivos com conteúdo idêntico, mantendo o
+    primeiro. O extrator genérico do yt-dlp baixa o mesmo vídeo uma vez por tag
+    (<video> e <source>), com nomes diferentes."""
+    kept: list[str] = []
+    seen: dict[tuple[int, str], str] = {}
+    for path in files:
+        try:
+            size = os.path.getsize(path)
+            h = hashlib.sha1()
+            with open(path, 'rb') as f:
+                for block in iter(lambda: f.read(1 << 20), b''):
+                    h.update(block)
+            key = (size, h.hexdigest())
+        except OSError:
+            kept.append(path)
+            continue
+        if key in seen:
+            logger.info(lmsg("utils.duplicate_file_removed", path=os.path.basename(path), original=os.path.basename(seen[key])))
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+            continue
+        seen[key] = path
+        kept.append(path)
+    return kept
 
 
 async def safe_cleanup(folder: str) -> None:

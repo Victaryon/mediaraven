@@ -41,6 +41,7 @@
     "unrecoverable_reason": "🛑 yt-dlp reportou erro não recuperável: {reason}"
   },
   "dispatcher": {
+    "gallery_dl_first": "📚 gallery-dl primeiro (extrator próprio do site; yt-dlp só teria o genérico): {url}",
     "link_do_threads": "🧵 Link do Threads detectado, redirecionando direto para Playwright.",
     "link_do_x": "🐦 Link do X detectado, redirecionando direto para handler dedicado.",
     "aten_o_deno_n_o": "⚠️ Atenção: Deno não encontrado! Downloads do YouTube podem falhar por JS Challenges.",
@@ -220,6 +221,7 @@
     "media_group_fallback": "🖼️ Telegram recusou o álbum ({e}); enviando os arquivos um a um."
   },
   "utils": {
+    "duplicate_file_removed": "🧹 Arquivo duplicado descartado: {path} (igual a {original})",
     "normalize_image_falhou": "normalize_image falhou para {filepath}: {e}",
     "falha_final_ao": "⚠️ Falha final ao limpar pasta '{folder}': {e}",
     "skip_content_type": "⏭️ Skip (Content-Type {ct}): {url}",

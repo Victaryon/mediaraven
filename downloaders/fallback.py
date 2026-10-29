@@ -349,6 +349,24 @@ def _can_handle_with_gallery_dl(url: str) -> bool:
         return False
 
 
+def _ytdlp_has_specific_extractor(url: str) -> bool:
+    from yt_dlp.extractor import gen_extractor_classes
+    return any(ie.suitable(url) for ie in gen_extractor_classes() if ie.ie_key() != 'Generic')
+
+
+def prefers_gallery_dl(url: str) -> bool:
+    """gallery-dl primeiro quando ele tem extrator próprio pro site e o yt-dlp só
+    teria o genérico (ex.: álbuns mistos de fotos e vídeos). O genérico do yt-dlp só enxerga
+    <video>, ignora as fotos e pega cada vídeo duas vezes (<video> e <source>)."""
+    if cfg("SCRAPE_GALLERY_DL_ENABLE") != "yes" or not _can_handle_with_gallery_dl(url):
+        return False
+    try:
+        return not _ytdlp_has_specific_extractor(url)
+    except Exception as e:
+        logger.debug(lmsg("fallback.gallery_dl_extractor", e=e))
+        return False
+
+
 def _list_files_in(folder: str) -> list[str]:
     if not os.path.exists(folder):
         return []

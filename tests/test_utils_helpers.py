@@ -204,3 +204,27 @@ async def test_async_download_file_timeout_is_per_read(tmp_path):
     timeout = session.kwargs['timeout']
     assert timeout.total is None
     assert timeout.sock_read == cfg("DOWNLOAD_TIMEOUT_SECONDS")
+
+
+def test_dedupe_identical_files_drops_copies(tmp_path):
+    from utils import dedupe_identical_files
+
+    a = tmp_path / "x-1.mp4"
+    b = tmp_path / "x-2.mp4"
+    c = tmp_path / "y-3.mp4"
+    a.write_bytes(b"same")
+    b.write_bytes(b"same")
+    c.write_bytes(b"diff")
+
+    kept = dedupe_identical_files([str(a), str(b), str(c)])
+
+    assert kept == [str(a), str(c)]
+    assert not b.exists()
+
+
+def test_prefers_gallery_dl_only_when_ytdlp_is_generic():
+    from downloaders.fallback import prefers_gallery_dl
+
+    assert prefers_gallery_dl("https://www.artstation.com/artwork/AbCd12") is True
+    assert prefers_gallery_dl("https://vimeo.com/76979871") is False
+    assert prefers_gallery_dl("https://example.com/qualquer") is False

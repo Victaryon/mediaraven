@@ -7,6 +7,7 @@ import yt_dlp
 from yt_dlp.networking.impersonate import ImpersonateTarget
 
 import state
+from utils import dedupe_identical_files
 from config import (
     cfg,
     FIREFOX_PROFILE_PATH,
@@ -341,7 +342,7 @@ async def _run_ytdlp_with_cookie_fallback(
 
             current_files = _list_downloaded_files(unique_folder)
             if current_files:
-                downloaded_files = sorted(current_files)
+                downloaded_files = await asyncio.to_thread(dedupe_identical_files, sorted(current_files))
                 logger.info(lmsg("_ytdlp.download_bem_sucedido", mode=attempt_label))
                 break
             logger.warning(lmsg("_ytdlp.yt_dlp_falhou", mode=attempt_label))

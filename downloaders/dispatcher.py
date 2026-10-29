@@ -32,7 +32,7 @@ from ._ytdlp import (
 )
 
 from .facebook import _FB_NUMERIC_USER_RE, download_facebook_gallery, facebook_owner_mismatch
-from .fallback import _build_status, _gallery_dl_run, fetch_article_caption, scrape_fallback
+from .fallback import _build_status, _gallery_dl_run, fetch_article_caption, prefers_gallery_dl, scrape_fallback
 from .instagram import download_instagram_api
 from .instagram_embed import download_instagram_embed
 from .reddit_json import download_reddit_json, resolve_reddit_external_link
@@ -214,6 +214,16 @@ async def download_media(
             fb_files, fb_status, fb_short, fb_full = await download_facebook_gallery(url, unique_folder)
             if fb_files:
                 return await _finalize_success(fb_files, fb_status, fb_short, fb_full, url, platform_label, started)
+
+        if platform_label == 'other' and prefers_gallery_dl(url):
+            logger.info(lmsg("dispatcher.gallery_dl_first", url=safe_url(url)))
+            gdl_files = await _gallery_dl_run(url, unique_folder)
+            if gdl_files:
+                return await _finalize_success(
+                    gdl_files, _build_status(gdl_files, "downloader_status.scraper_gallerydl"),
+                    "", "", url, platform_label, started,
+                )
+            _wipe_folder(unique_folder)
 
         has_firefox_cookie = os.path.exists(os.path.join(FIREFOX_PROFILE_PATH, 'cookies.sqlite'))
         if platform.youtube and not state.DENO_PATH:
