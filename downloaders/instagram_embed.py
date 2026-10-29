@@ -167,7 +167,7 @@ async def download_instagram_embed(url: str, unique_folder: str) -> tuple[list[s
         if not ok:
             continue
         if kind == "image":
-            normalized = normalize_image(filepath, min_size=100)
+            normalized = await asyncio.to_thread(normalize_image, filepath, min_size=100)
             if normalized is None:
                 continue
             downloaded.append(normalized)

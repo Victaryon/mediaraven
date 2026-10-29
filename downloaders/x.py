@@ -249,7 +249,10 @@ async def _try_authenticated(url: str, tweet_id: str) -> tuple[list[tuple[str, s
             logger.warning(lmsg("x.playwright_erro_carregando", arg0=safe_url(url), e=e))
             content = ""
         finally:
-            await page.close()
+            try:
+                await page.close()
+            except Exception:
+                pass
 
     tweet_obj: Optional[dict] = None
     for data in captured:
@@ -314,7 +317,7 @@ async def download_x(url: str, unique_folder: str) -> tuple[list[str], str, str,
         if not ok:
             continue
         if kind == "image":
-            normalized = normalize_image(filepath, min_size=100)
+            normalized = await asyncio.to_thread(normalize_image, filepath, min_size=100)
             if normalized is None:
                 continue
             downloaded.append(normalized)

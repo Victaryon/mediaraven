@@ -310,3 +310,72 @@ async def test_media_group_passes_paths_and_timeouts(tmp_path):
     assert kwargs["read_timeout"] == 600
     assert kwargs["write_timeout"] == 600
     assert kwargs["connect_timeout"] == 600
+
+
+def _cfg_no_wait(key):
+    return {
+        "TELEGRAM_UPLOAD_TIMEOUT": 600,
+        "VIDEO_CONVERT_TIMEOUT": 600,
+        "MEDIA_GROUP_CHUNK_SIZE": 10,
+        "MEDIA_GROUP_DELAY": 0,
+    }[key]
+
+
+@pytest.mark.asyncio
+async def test_photo_image_process_failed_falls_back_to_document(tmp_path):
+    from telegram.error import BadRequest
+    f = tmp_path / "img.jpg"
+    f.write_bytes(b"x")
+    ctx = _make_context()
+    ctx.bot.send_photo.side_effect = BadRequest("Image_process_failed")
+
+    with patch.object(telegram_io, "cfg", _cfg_no_wait):
+        await telegram_io.send_downloaded_media(
+            context=ctx, chat_id=1, files=[str(f)], original_msg_id=10,
+            upload_kwargs={}, caption="legenda",
+        )
+
+    kwargs = ctx.bot.send_document.await_args.kwargs
+    assert kwargs["document"] == str(f)
+    assert kwargs["caption"] == "legenda"
+
+
+@pytest.mark.asyncio
+async def test_media_group_image_process_failed_sends_one_by_one(tmp_path):
+    from telegram.error import BadRequest
+    a = tmp_path / "a.jpg"
+    b = tmp_path / "b.jpg"
+    a.write_bytes(b"x")
+    b.write_bytes(b"y")
+    ctx = _make_context()
+    ctx.bot.send_media_group.side_effect = BadRequest(
+        'Failed to send message #2 with the error message "image_process_failed"'
+    )
+    ctx.bot.send_photo.side_effect = [None, BadRequest("Image_process_failed")]
+
+    with patch.object(telegram_io, "cfg", _cfg_no_wait):
+        await telegram_io.send_downloaded_media(
+            context=ctx, chat_id=1, files=[str(a), str(b)], original_msg_id=10,
+            upload_kwargs={'reply_to_message_id': 10}, caption="legenda",
+        )
+
+    assert ctx.bot.send_photo.await_args_list[0].kwargs["caption"] == "legenda"
+    assert ctx.bot.send_document.await_args.kwargs["document"] == str(b)
+    assert "caption" not in ctx.bot.send_document.await_args.kwargs
+
+
+@pytest.mark.asyncio
+async def test_retries_exhausted_raises(tmp_path):
+    from telegram.error import TimedOut
+    f = tmp_path / "blob.bin"
+    f.write_bytes(b"x")
+    ctx = _make_context()
+    ctx.bot.send_document.side_effect = TimedOut()
+
+    with patch.object(telegram_io, "cfg", _cfg_no_wait), \
+         patch.object(telegram_io.asyncio, "sleep", AsyncMock()):
+        with pytest.raises(TimedOut):
+            await telegram_io.send_downloaded_media(
+                context=ctx, chat_id=1, files=[str(f)], original_msg_id=10, upload_kwargs={},
+            )
+    assert ctx.bot.send_document.await_count == 4

@@ -267,7 +267,7 @@ async def _download_one(
             return None
 
     if kind == "image":
-        normalized = normalize_image(filepath, min_size=cfg("SCRAPE_MIN_IMAGE_SIZE"))
+        normalized = await asyncio.to_thread(normalize_image, filepath, min_size=cfg("SCRAPE_MIN_IMAGE_SIZE"))
         return normalized
     return filepath
 
@@ -484,7 +484,7 @@ async def fetch_article_caption(url: str, html: Optional[str] = None) -> tuple[s
         )
     if not html:
         return "", ""
-    result = extract_article(html, url=url, min_chars=cfg("SCRAPE_ARTICLE_MIN_CHARS"))
+    result = await asyncio.to_thread(extract_article, html, url=url, min_chars=cfg("SCRAPE_ARTICLE_MIN_CHARS"))
     if not result:
         return "", ""
     title, body = result

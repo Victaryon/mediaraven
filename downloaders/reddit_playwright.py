@@ -118,7 +118,10 @@ async def download_reddit_playwright(url: str, unique_folder: str) -> tuple[list
         except Exception as e:
             logger.warning(lmsg("reddit_playwright.erro_no_playwright", e=e))
         finally:
-            await page.close()
+            try:
+                await page.close()
+            except Exception:
+                pass
 
     count = 0
     for m_url in media_urls:

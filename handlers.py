@@ -42,7 +42,8 @@ async def future_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     prefix, req_key, value = query.data.split('|')
     store_key, alert = _PROMPT_KINDS[prefix][:2]
 
-    data = context.bot_data.get(store_key, {}).get(req_key)
+    # message_id só é único dentro do chat: a chave guardada leva o chat junto.
+    data = context.bot_data.get(store_key, {}).get((query.message.chat_id, req_key))
     if not data:
         await query.answer(msg(f"callback_alerts.{alert}_expired"), show_alert=True)
         return
@@ -59,7 +60,7 @@ async def future_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 async def retry_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
-    retry_id = query.data
+    retry_id = (query.message.chat_id, query.data)
 
     if retry_id not in context.bot_data.get('retries', {}):
         await query.answer(msg("callback_alerts.retry_expired"), show_alert=True)
@@ -86,6 +87,7 @@ async def retry_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def _ask_via_future(
     context: ContextTypes.DEFAULT_TYPE,
     store_key: str,
+    chat_id: int,
     req_key: str,
     user_id: Optional[int],
     timeout: float,
@@ -93,13 +95,14 @@ async def _ask_via_future(
 ) -> str:
     loop = asyncio.get_running_loop()
     future = loop.create_future()
-    context.bot_data.setdefault(store_key, {})[req_key] = {'future': future, 'user_id': user_id}
+    key = (chat_id, req_key)
+    context.bot_data.setdefault(store_key, {})[key] = {'future': future, 'user_id': user_id}
     try:
         return await asyncio.wait_for(future, timeout=timeout)
     except asyncio.TimeoutError:
         return default
     finally:
-        context.bot_data[store_key].pop(req_key, None)
+        context.bot_data[store_key].pop(key, None)
 
 
 def _yes_no_markup(prefix: str, req_key: str, yes_label: str, no_label: str) -> InlineKeyboardMarkup:
@@ -136,7 +139,7 @@ async def _ask_yes_no(
     else:
         await status_msg.edit_text(text, parse_mode='HTML', reply_markup=markup)
     choice = await _ask_via_future(
-        context, store_key, req_key, user_id, timeout=timeout, default=default,
+        context, store_key, status_msg.chat_id, req_key, user_id, timeout=timeout, default=default,
     )
     return choice, status_msg
 
@@ -163,7 +166,7 @@ async def _ask_language_choice(
         reply_markup=markup,
     )
     return await _ask_via_future(
-        context, 'lang_futures', req_key, user_id,
+        context, 'lang_futures', status_msg.chat_id, req_key, user_id,
         timeout=cfg("ASK_LANG_TIMEOUT"), default='original',
     )
 
@@ -288,7 +291,7 @@ async def _register_retry_and_prompt(
     suffix: str,
 ) -> None:
     retry_id = f"retry_{message_id}_{idx}"
-    context.bot_data['retries'][retry_id] = {
+    context.bot_data['retries'][(status_msg.chat_id, retry_id)] = {
         'url': url, 'msg_id': message_id, 'user_id': user_id,
         'target_lang': target_lang,
     }

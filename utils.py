@@ -250,6 +250,14 @@ async def _run_proc(
             except Exception:
                 pass
         return 'timeout', b'', ''
+    except asyncio.CancelledError:
+        # Shutdown cancela a task: sem isso o ffmpeg fica órfão rodando.
+        if process and process.returncode is None:
+            try:
+                process.kill()
+            except ProcessLookupError:
+                pass
+        raise
     except Exception as e:
         return 'error', b'', e
 

@@ -216,7 +216,10 @@
     "erro_fatal_ao": "❌ Erro fatal ao enviar mídia única: {e}",
     "flood_control_de": "⏳ Flood control de grupo! Aguardando {arg0}s antes de reenviar os 10 arquivos...",
     "timeout_no_envio_2": "⏳ Timeout no envio do media_group. Retentando em 5s...",
-    "erro_desconhecido_ao": "⚠️ Erro desconhecido ao enviar media_group: {e}"
+    "erro_desconhecido_ao": "⚠️ Erro desconhecido ao enviar media_group: {e}",
+    "retries_exhausted": "❌ Envio falhou após {n} tentativas.",
+    "image_as_document": "🖼️ Telegram não processou a imagem {path}; reenviando como documento.",
+    "media_group_fallback": "🖼️ Telegram recusou o álbum ({e}); enviando os arquivos um a um."
   },
   "utils": {
     "normalize_image_falhou": "normalize_image falhou para {filepath}: {e}",

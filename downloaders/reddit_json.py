@@ -251,7 +251,7 @@ async def download_reddit_json(
 
             if success:
                 if not filepath.lower().endswith(('.mp4', '.gif', '.webm')):
-                    normalized = normalize_image(filepath, min_size=1)
+                    normalized = await asyncio.to_thread(normalize_image, filepath, min_size=1)
                     if normalized is None:
                         continue
                     filepath = normalized

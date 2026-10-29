@@ -1,6 +1,7 @@
 """Orquestrador de download. Os helpers específicos vivem em submódulos
 (_platform, _ytdlp, _languages, _caption).
 """
+import asyncio
 import logging
 import os
 import time
@@ -87,7 +88,7 @@ async def _reddit_news_card(
         thumb_path = os.path.join(unique_folder, 'reddit_link_thumb.jpg')
         try:
             if await async_download_file(thumb, thumb_path):
-                normalized = normalize_image(thumb_path, min_size=1)
+                normalized = await asyncio.to_thread(normalize_image, thumb_path, min_size=1)
                 if normalized:
                     files = [normalized]
         except Exception as e:
